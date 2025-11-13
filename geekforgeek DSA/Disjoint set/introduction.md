@@ -24,3 +24,9 @@ The root node (or the topmost node) of each tree is called the representative of
     ![alt text](image-2.png)
     ![alt text](image-3.png)
     ![alt text](image-4.png)
+## time complexity
+**O(n)** for creating n single item sets . The two techniques -path compression with the union by rank/size, the time complexity will reach nearly constant time. It turns out, that the final amortized time complexity is O(α(n)), where α(n) is the inverse Ackermann function, which grows very steadily (it does not even exceed for n<10600  approximately).  
+## space complexity  
+**O(n)** because we need to store n elements in the Disjoint Set Data Structure.
+
+
