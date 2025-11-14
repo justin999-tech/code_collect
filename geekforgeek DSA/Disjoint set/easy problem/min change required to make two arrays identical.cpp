@@ -6,6 +6,7 @@ vector<int> id(N),sz(N);
 
 //id:store parent of a node
 //sz:store size of a DSU tree
+//DSU:disjoint set union
 int root(int idx){
     int i=idx;
     while(id[i]!=i)
