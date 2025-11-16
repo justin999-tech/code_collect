@@ -4,7 +4,7 @@ using namespace std;
 #define N 100010
 vector<int> id(N),sz(N);
 
-//id:store parent of a node
+//id:store parent of a node i.e parent[]
 //sz:store size of a DSU tree
 //DSU:disjoint set union
 int root(int idx){
@@ -28,7 +28,7 @@ void Union(int a, int b){
 }
 int min_change(int n, vector<int>& a, vector<int>& b){
     //sets as single elements
-    for(int i=0; i<n; i++){
+    for(int i=0; i<N; i++){
        id[i]=i;
        sz[i]=1;
     }
@@ -61,7 +61,7 @@ int main(){
         }
     }
 
-    int n=sizeof(a)/sizeof(a[0]);
+    int n=a.size();
     cout<<min_change(n,a,b);
     return 0;
 }
