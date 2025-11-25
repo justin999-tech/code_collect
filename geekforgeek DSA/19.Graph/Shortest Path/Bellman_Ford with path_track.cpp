@@ -36,7 +36,7 @@ pair<vector<int>,vector<int>> Bellman_Ford (int V, int src, vector<vector<int>>&
         //each sweep -> relaxing every edge
          bool update = false;
         for(auto& edge : edges){        
-            auto[u,v,wt]=tuple(edge[0],edge[1],edge[2]);
+            auto[u,v,wt] = tuple(edge[0],edge[1],edge[2]);
             if(distance[u]!=INF && distance[u] + wt < distance[v]){
                 if(i==V-1){
                     return {vector<int> {-1}, vector<int> {}};

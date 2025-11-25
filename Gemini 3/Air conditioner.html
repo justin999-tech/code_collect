@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虛擬冷氣機 CoolBreeze 3000</title>
+    <style>
+        :root {
+            --bg-color: #e0e0e0;
+            --ac-white: #f4f7f6;
+            --display-bg: #222;
+            --display-text: #00ff00;
+            --led-blue: #00d2ff;
+            --led-orange: #ff9d00;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-color);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background 1s ease;
+            overflow: hidden;
+        }
+
+        /* --- 冷氣機本體 --- */
+        .ac-unit {
+            width: 600px;
+            height: 200px;
+            background: linear-gradient(to bottom, #ffffff, #e1e8ed);
+            border-radius: 10px 10px 30px 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding: 20px;
+            margin-bottom: 50px;
+            z-index: 2;
+        }
+
+        .brand {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-weight: bold;
+            color: #888;
+            font-style: italic;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+
+        .display-panel {
+            width: 120px;
+            height: 50px;
+            background: var(--display-bg);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--display-text);
+            font-family: 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+            opacity: 0.1; /* 關機時暗掉 */
+            transition: opacity 0.3s;
+        }
+
+        .display-panel.active {
+            opacity: 1;
+            text-shadow: 0 0 5px var(--display-text);
+        }
+
+        .indicators {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .indicators.active { opacity: 1; }
+
+        .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        .indicator.cool { background: var(--led-blue); box-shadow: 0 0 5px var(--led-blue); }
+        .indicator.heat { background: var(--led-orange); box-shadow: 0 0 5px var(--led-orange); }
+
+        .vent {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            right: 20px;
+            height: 30px;
+            background: #dcdcdc;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .blade {
+            width: 100%;
+            height: 100%;
+            background: #bbb;
+            transform-origin: top;
+            transform: rotateX(90deg);
+            transition: transform 1s ease;
+        }
+
+        .blade.open {
+            transform: rotateX(45deg);
+            animation: swing 3s infinite ease-in-out alternate;
+        }
+
+        @keyframes swing {
+            0% { transform: rotateX(45deg); }
+            100% { transform: rotateX(20deg); }
+        }
+
+        /* --- 空氣流動特效 --- */
+        .air-flow {
+            position: absolute;
+            top: 210px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 300px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .air-flow.active { opacity: 1; }
+
+        .stream {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            width: 2px;
+            height: 50px;
+            border-radius: 2px;
+            animation: flow 1s infinite linear;
+        }
+
+        @keyframes flow {
+            0% { transform: translateY(0); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(200px); opacity: 0; }
+        }
+
+        /* --- 遙控器 --- */
+        .remote {
+            width: 200px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .screen {
+            height: 80px;
+            background: #f0f8ff;
+            border: 1px solid #dcdcdc;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .screen strong { font-size: 1.8rem; }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            user-select: none;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .btn-power {
+            grid-column: span 2;
+            background: #ff4757;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .btn-temp {
+            background: #eccc68;
+            color: #333;
+        }
+
+        .btn-mode {
+            background: #70a1ff;
+            color: white;
+        }
+
+        .btn-fan {
+            background: #a4b0be;
+            color: white;
+        }
+
+        /* --- 狀態訊息 --- */
+        .status-msg {
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="ac-unit">
+        <div class="brand">CoolBreeze</div>
+        <div class="display-panel" id="acDisplay">--</div>
+        <div class="indicators" id="indicators">
+            <div class="indicator cool" id="indCool"></div>
+            <div class="indicator heat" id="indHeat" style="display:none;"></div>
+        </div>
+        <div class="vent">
+            <div class="blade" id="blade"></div>
+        </div>
+    </div>
+
+    <div class="air-flow" id="airFlow">
+        </div>
+
+    <div class="remote">
+        <div class="screen" id="remoteScreen">
+            <span>OFF</span>
+        </div>
+        <div class="btn-grid">
+            <button class="btn-power" onclick="togglePower()">⏻ 電源</button>
+            <button class="btn-temp" onclick="changeTemp(1)">▲ 溫度 +</button>
+            <button class="btn-temp" onclick="changeTemp(-1)">▼ 溫度 -</button>
+            <button class="btn-mode" onclick="changeMode()">❄️/☀️ 模式</button>
+            <button class="btn-fan" onclick="changeFan()">💨 風速</button>
+        </div>
+    </div>
+
+    <div class="status-msg" id="msg">按下電源開啟冷氣...</div>
+
+    <script>
+        // 狀態變數
+        let isOn = false;
+        let temperature = 26;
+        let mode = 'cool'; // 'cool' or 'heat'
+        let fanSpeed = 1; // 1 to 3
+
+        // DOM 元素
+        const acDisplay = document.getElementById('acDisplay');
+        const blade = document.getElementById('blade');
+        const remoteScreen = document.getElementById('remoteScreen');
+        const indicators = document.getElementById('indicators');
+        const indCool = document.getElementById('indCool');
+        const indHeat = document.getElementById('indHeat');
+        const airFlow = document.getElementById('airFlow');
+        const msg = document.getElementById('msg');
+
+        // 音效 Context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playBeep() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function updateUI() {
+            if (isOn) {
+                // 更新 AC 顯示
+                acDisplay.textContent = temperature + '°C';
+                acDisplay.classList.add('active');
+                indicators.classList.add('active');
+                blade.classList.add('open');
+                airFlow.classList.add('active');
+
+                // 模式顯示
+                if (mode === 'cool') {
+                    indCool.style.display = 'block';
+                    indHeat.style.display = 'none';
+                    document.documentElement.style.setProperty('--display-text', '#00ff00');
+                } else {
+                    indCool.style.display = 'none';
+                    indHeat.style.display = 'block';
+                    document.documentElement.style.setProperty('--display-text', '#ff4500');
+                }
+
+                // 遙控器顯示
+                remoteScreen.innerHTML = `
+                    <span>模式: ${mode === 'cool' ? '冷氣' : '暖氣'}</span>
+                    <strong>${temperature}°C</strong>
+                    <span>風速: ${'|'.repeat(fanSpeed)}</span>
+                `;
+
+                updateBackground();
+                generateWind();
+                msg.textContent = `運轉中... 設定溫度 ${temperature}°C`;
+
+            } else {
+                // 關機狀態
+                acDisplay.classList.remove('active');
+                indicators.classList.remove('active');
+                blade.classList.remove('open');
+                airFlow.classList.remove('active');
+                remoteScreen.innerHTML = '<span>OFF</span>';
+                document.body.style.background = '#e0e0e0';
+                airFlow.innerHTML = ''; // 清除風
+                msg.textContent = '冷氣已關閉';
+            }
+        }
+
+        function updateBackground() {
+            if (!isOn) return;
+            // 根據溫度改變背景顏色
+            // 16度最藍，30度最紅
+            let r, g, b;
+            if (mode === 'cool') {
+                // 藍色系變化 (16-30)
+                const percent = (temperature - 16) / 14; 
+                // 從深藍到淺藍
+                const color1 = [100, 200, 255];
+                const color2 = [220, 240, 255];
+                r = Math.round(color1[0] + (color2[0] - color1[0]) * percent);
+                g = Math.round(color1[1] + (color2[1] - color1[1]) * percent);
+                b = Math.round(color1[2] + (color2[2] - color1[2]) * percent);
+                document.body.style.background = `linear-gradient(to bottom, rgb(${r},${g},${b}), #fff)`;
+            } else {
+                // 暖色系
+                document.body.style.background = `linear-gradient(to bottom, #ffecd2, #fcb69f)`;
+            }
+        }
+
+        function generateWind() {
+            if (!isOn) return;
+            // 簡單的風特效管理
+            if (airFlow.children.length > 20) {
+                airFlow.innerHTML = '';
+            }
+            const stream = document.createElement('div');
+            stream.classList.add('stream');
+            stream.style.left = Math.random() * 100 + '%';
+            stream.style.animationDuration = (1.5 - (fanSpeed * 0.3)) + 's'; // 風速越快動畫越快
+            stream.style.height = (Math.random() * 50 + 20) + 'px';
+            airFlow.appendChild(stream);
+            
+            setTimeout(() => {
+                if (stream.parentNode) stream.parentNode.removeChild(stream);
+            }, 1500);
+            
+            setTimeout(generateWind, 200 / fanSpeed);
+        }
+
+        // --- 控制功能 ---
+
+        function togglePower() {
+            playBeep();
+            isOn = !isOn;
+            updateUI();
+        }
+
+        function changeTemp(change) {
+            if (!isOn) return;
+            playBeep();
+            temperature += change;
+            if (temperature > 30) temperature = 30;
+            if (temperature < 16) temperature = 16;
+            updateUI();
+        }
+
+        function changeMode() {
+            if (!isOn) return;
+            playBeep();
+            mode = mode === 'cool' ? 'heat' : 'cool';
+            updateUI();
+        }
+
+        function changeFan() {
+            if (!isOn) return;
+            playBeep();
+            fanSpeed++;
+            if (fanSpeed > 3) fanSpeed = 1;
+            updateUI();
+        }
+
+        // 初始設定
+        updateUI();
+
+    </script>
+</body>
+</html>

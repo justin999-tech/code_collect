@@ -1,3 +1,4 @@
+``` cpp
 int Find_Set(int x) {
     int cur = x;
 
@@ -16,3 +17,28 @@ int Find_Set(int x) {
 
     return root;
 }
+```
+
+```cpp
+vector<bool> visited(n, false);
+stack<int> st;
+st.push(s);
+while (!st.empty()) {
+    int u = st.top();
+    st.pop();
+
+    if (visited[u]) continue;   
+
+    visited[u] = true;
+    
+    cout << u << " ";
+
+    // 把 u 的鄰居們丟進 stack
+    for (int v : Adj[u]) {
+        if (!visited[v]) {
+            st.push(v);
+        }
+    }
+}
+
+```
