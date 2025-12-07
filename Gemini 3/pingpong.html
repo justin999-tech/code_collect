@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>擬真透視桌球</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #333;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2rem;
+            letter-spacing: 2px;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #555;
+            color: white;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #777;
+        }
+
+        button.active {
+            background-color: #d11d1d; /* 紅色強調 */
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #gameCanvas {
+            /* 畫布寬高比模擬桌球桌的長寬 */
+            border: 4px solid #fff;
+            background-color: #008f4c; /* 桌球桌綠色 */
+            cursor: none;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        .instruction {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎾 擬真透視桌球</h1>
+
+    <div class="controls">
+        <button onclick="setDifficulty('easy')" id="btn-easy" class="active">簡單</button>
+        <button onclick="setDifficulty('medium')" id="btn-medium">中等</button>
+        <button onclick="setDifficulty('hard')" id="btn-hard">困難</button>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div class="instruction">
+        **擬真控制：** 滑鼠移動控制球拍位置。**快速揮動滑鼠**可以讓球反彈的角度更刁鑽，模擬揮拍力量。
+    </div>
+
+<script>
+    // --- 遊戲初始化設定 ---
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const WINNING_SCORE = 10;
+    let difficultyLevel = 0.04; // AI 追蹤係數
+    
+    // 遊戲物件參數
+    const PADDLE_HEIGHT = 15;
+    const PADDLE_WIDTH = 100;
+
+    // 玩家 (底線)
+    const user = {
+        x: canvas.width / 2 - PADDLE_WIDTH / 2, 
+        y: canvas.height - 30, // 靠近底線
+        width: PADDLE_WIDTH,
+        height: PADDLE_HEIGHT,
+        color: "#1e90ff",
+        score: 0,
+        // 額外的控制變數
+        velX: 0, // 用於模擬揮拍力量的 X 軸速度
+        prevX: 0
+    };
+
+    // 電腦 (頂線)
+    const com = {
+        x: canvas.width / 2 - PADDLE_WIDTH / 2, 
+        y: 10, 
+        width: PADDLE_WIDTH,
+        height: PADDLE_HEIGHT,
+        color: "#d11d1d",
+        score: 0
+    };
+
+    // 球
+    const ball = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        radius: 8,
+        speed: 5,
+        velocityX: 0,
+        velocityY: 5,
+        color: "white"
+    };
+
+    // --- 繪圖函數 ---
+
+    // 繪製桌球桌的網子 (中線)
+    function drawNet() {
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 4;
+        ctx.setLineDash([10, 10]); // 虛線
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2);
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
+        ctx.setLineDash([]); // 恢復實線
+    }
+
+    function drawText(text, x, y, color) {
+        ctx.fillStyle = color;
+        ctx.font = "30px sans-serif";
+        ctx.fillText(text, x, y);
+    }
+
+    // 繪製球拍 (使用陰影增加立體感)
+    function drawPaddle(p) {
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 10;
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        ctx.shadowBlur = 0; // 繪製完畢清除陰影
+    }
+
+    // 繪製球 (根據 Y 軸位置縮放大小，模擬透視感)
+    function drawBall(b) {
+        // 縮放係數 (0.5 到 1.5 之間)
+        // 越靠近底線 (y=600), scale 越接近 1.5 (球越大)
+        // 越靠近頂線 (y=0), scale 越接近 0.5 (球越小)
+        const scaleFactor = 0.5 + (b.y / canvas.height) * 1.0; 
+        const currentRadius = b.radius * scaleFactor;
+
+        ctx.fillStyle = b.color;
+        ctx.shadowColor = 'yellow';
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, currentRadius, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    // --- 遊戲控制與邏輯 ---
+
+    canvas.addEventListener("mousemove", getMousePos);
+
+    function getMousePos(evt) {
+        let rect = canvas.getBoundingClientRect();
+        let mouseX = evt.clientX - rect.left;
+        let mouseY = evt.clientY - rect.top;
+
+        // 1. 玩家球拍 X 軸移動 (左右)
+        // 讓球拍中心對齊滑鼠 X 軸
+        user.x = mouseX - user.width / 2;
+
+        // 2. 玩家球拍 Y 軸限制 (前後)
+        // 限制玩家只能在靠近底線的區域移動 (約畫布的最後 1/5)
+        const minY = canvas.height * 0.75;
+        user.y = Math.max(minY, mouseY - user.height / 2);
+        user.y = Math.min(canvas.height - user.height, user.y);
+
+        // 3. 計算揮拍力量 (模擬揮拍速度)
+        // 揮拍力量取決於滑鼠 X 軸移動速度
+        user.velX = (mouseX - user.prevX) * 0.1; // 乘以係數控制強度
+        user.prevX = mouseX;
+
+        // 邊界檢查
+        if (user.x < 0) user.x = 0;
+        if (user.x + user.width > canvas.width) user.x = canvas.width - user.width;
+    }
+
+    // 碰撞檢測 (簡化版 AABB)
+    function collision(b, p) {
+        p.top = p.y;
+        p.bottom = p.y + p.height;
+        p.left = p.x;
+        p.right = p.x + p.width;
+
+        b.top = b.y - b.radius;
+        b.bottom = b.y + b.radius;
+        b.left = b.x - b.radius;
+        b.right = b.x + b.radius;
+
+        return p.left < b.right && p.top < b.bottom && p.right > b.left && p.bottom > b.top;
+    }
+
+    function resetBall() {
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+        ball.speed = 5;
+        ball.velocityY = -ball.velocityY; // 換邊發球
+        ball.velocityX = (Math.random() - 0.5) * ball.speed * 0.5; // 輕微隨機 X 軸
+    }
+
+    // 核心更新邏輯
+    function update() {
+        // 更新球的位置
+        ball.x += ball.velocityX;
+        ball.y += ball.velocityY;
+
+        // AI 邏輯：只在 X 軸上追蹤球的位置
+        const comCenterX = com.x + com.width / 2;
+        const targetX = ball.x;
+        // AI 追蹤速度受 difficultyLevel 影響
+        com.x += (targetX - comCenterX) * difficultyLevel; 
+
+        // AI 邊界檢查
+        if(com.x < 0) com.x = 0;
+        if(com.x + com.width > canvas.width) com.x = canvas.width - com.width;
+
+        // 球碰到左右邊緣反彈
+        if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+            ball.velocityX = -ball.velocityX;
+        }
+
+        // 碰撞與揮拍邏輯
+        let player = (ball.y < canvas.height / 2) ? com : user; // 判斷球在誰的半場
+
+        if (collision(ball, player)) {
+            // 球拍中心點的相對位置 (-1 到 1)
+            let collidePoint = (ball.x - (player.x + player.width / 2));
+            collidePoint = collidePoint / (player.width / 2);
+
+            // 調整球的 Y 軸速度 (反彈)
+            ball.velocityY = -ball.velocityY;
+
+            // **擬真揮拍力量模擬**
+            if (player === user) {
+                // 玩家揮拍時，將滑鼠移動的速度 (user.velX) 加到球的 X 軸速度上
+                ball.velocityX += user.velX * 0.8; 
+            } else {
+                // 電腦擊球時，根據擊中位置設定角度，不加額外力量
+                ball.velocityX = collidePoint * ball.speed * 0.4;
+            }
+
+            // 限制 X 軸速度，防止球飛太快或角度太奇怪
+            const maxVelocityX = 10;
+            if(ball.velocityX > maxVelocityX) ball.velocityX = maxVelocityX;
+            if(ball.velocityX < -maxVelocityX) ball.velocityX = -maxVelocityX;
+
+            // 每次擊球後稍微加速
+            ball.speed += 0.2;
+            if (ball.speed > 18) ball.speed = 18; // 速度上限
+            
+            // 重新計算 Y 軸速度，保持整體速度穩定
+            ball.velocityY = Math.sign(ball.velocityY) * Math.sqrt(ball.speed * ball.speed - ball.velocityX * ball.velocityX);
+        }
+
+        // 得分判定 (球超出頂線或底線)
+        if (ball.y - ball.radius < 0) {
+            user.score++;
+            checkWin();
+            resetBall();
+        } else if (ball.y + ball.radius > canvas.height) {
+            com.score++;
+            checkWin();
+            resetBall();
+        }
+    }
+
+    function checkWin(){
+        if(user.score >= WINNING_SCORE || com.score >= WINNING_SCORE){
+            let winner = user.score >= WINNING_SCORE ? "你贏了！" : "電腦贏了！";
+            alert(winner + " 點擊確定重新開始。");
+            user.score = 0;
+            com.score = 0;
+            ball.speed = 5;
+        }
+    }
+
+    // 渲染畫面
+    function render() {
+        // 畫布背景 (桌球桌底色)
+        ctx.fillStyle = "#008f4c"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height); 
+
+        drawNet();
+
+        // 畫線條強調桌球桌邊緣
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 6;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+        // 繪製物件
+        drawPaddle(user);
+        drawPaddle(com);
+        drawBall(ball);
+
+        // 分數
+        drawText(user.score, 50, canvas.height / 2 + 50, "white");
+        drawText(com.score, 50, canvas.height / 2 - 20, "white");
+    }
+
+    // 遊戲迴圈
+    function game() {
+        update();
+        render();
+        requestAnimationFrame(game);
+    }
+
+    // --- 難度設定 ---
+    function setDifficulty(level) {
+        // 移除並設定 active 樣式
+        document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-' + level).classList.add('active');
+
+        // 重置分數和球
+        user.score = 0;
+        com.score = 0;
+        resetBall();
+
+        // 設定 AI 參數
+        switch (level) {
+            case 'easy':
+                difficultyLevel = 0.04; // 電腦反應慢，容易打空
+                break;
+            case 'medium':
+                difficultyLevel = 0.08; // 電腦反應普通
+                break;
+            case 'hard':
+                difficultyLevel = 0.15; // 電腦反應極快
+                break;
+        }
+    }
+
+    // 啟動遊戲
+    game();
+</script>
+</body>
+</html>
