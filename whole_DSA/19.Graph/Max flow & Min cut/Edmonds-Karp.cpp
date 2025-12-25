@@ -118,4 +118,7 @@ int main()
 
     return 0;
 }
-//Time complexity : O(VE^2)
+/*
+Ford-Fulkerson:find augmented path using non-BFS -> O(f*E)
+Edmonds-Karp:find augmented path using BFS(cause least edges) -> O(VE²)
+*/

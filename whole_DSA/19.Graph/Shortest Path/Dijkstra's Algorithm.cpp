@@ -1,6 +1,7 @@
 //Dijkstra’s Algorithm using Min Heap - O(E*logV) Time and O(V) Space
 //https://www.geeksforgeeks.org/dsa/dijkstras-shortest-path-algorithm-greedy-algo-7/
 //因為每次都要取最小的，所以用min-heap可以大幅降低難度
+//dijkstra可以處理undirected and directed，但不能處理負邊
 #include<bits/stdc++.h>
 using namespace std;
 vector<vector<vector<int>>> construct_adjacent(int &V, vector<vector<int>>& edges){
