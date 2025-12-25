@@ -8,3 +8,7 @@ Debug/
 Release/
 *.log
 *.txt
+*.pdb
+*.ilk
+*.suo
+*.user
