@@ -1,6 +1,7 @@
 //this Bellman Ford algorithm contain path track funnction !
 //this code deal with directed-with-negative-weight graph 
 //Mainly use the "relaxing thinking"
+//輸入完後要按Ctrl+Z
 #include<bits/stdc++.h>
 using namespace std;
 const int INF = 1e8;
@@ -34,7 +35,7 @@ pair<vector<int>,vector<int>> Bellman_Ford (int V, int src, vector<vector<int>>&
     
     for(int i=0; i<V; i++){
         //each sweep -> relaxing every edge
-         bool update = false;
+        bool update = false;
         for(auto& edge : edges){        
             auto[u,v,wt] = tuple(edge[0],edge[1],edge[2]);
             if(distance[u]!=INF && distance[u] + wt < distance[v]){
@@ -50,7 +51,7 @@ pair<vector<int>,vector<int>> Bellman_Ford (int V, int src, vector<vector<int>>&
               break; // 直接結束for_loop
     }
      return {distance,parent};
-}
+} 
 int main(){
     int src,V,u,v,weight;
     //V nodes maked 0 ~ V-1;
