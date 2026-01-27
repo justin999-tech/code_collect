@@ -20,13 +20,8 @@ public:
 
     // Find the representative of the set that x belongs to
     int find(int i) {
-        int root = parent[i];
-      
-        if (parent[root] != root) {
-            return parent[i] = find(root);
-        }
-      
-        return root;
+        if (parent[i] == i) return i;
+        return parent[i] = find(parent[i]);
     }
 
     // Union of sets containing x and y
