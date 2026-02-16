@@ -496,33 +496,126 @@
             flex-direction: column;
             align-items: center;
             z-index: 50;
+            perspective: 1500px;
         }
 
-        .dice {
+        .dice-container {
             width: 100px;
             height: 100px;
-            background: white;
-            border: 4px solid #333;
-            border-radius: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 72px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.6);
             position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
         }
 
-        .dice::before {
-            content: '⚀';
-            font-size: 72px;
+        /* 3D dice wrapper for shadow */
+        .dice-container::after {
+            content: '';
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            top: -10%;
+            left: -10%;
+            filter: blur(20px);
+            opacity: 0.3;
+            background: radial-gradient(circle, rgba(0,0,0,0.5) 0%, transparent 70%);
+            z-index: -1;
+            transform: translateZ(-60px);
         }
 
-        .dice[data-value="1"]::before { content: '⚀'; }
-        .dice[data-value="2"]::before { content: '⚁'; }
-        .dice[data-value="3"]::before { content: '⚂'; }
-        .dice[data-value="4"]::before { content: '⚃'; }
-        .dice[data-value="5"]::before { content: '⚄'; }
-        .dice[data-value="6"]::before { content: '⚅'; }
+        .dice-container.rolling {
+            animation: diceRoll 2s ease-out;
+        }
+
+        @keyframes diceRoll {
+            0% {
+                transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+            }
+            100% {
+                transform: rotateX(720deg) rotateY(720deg) rotateZ(360deg);
+            }
+        }
+
+        .dice-face {
+            position: absolute;
+            width: 102px;
+            height: 102px;
+            background:
+                linear-gradient(145deg, #ffffff, #fafafa, #f5f5f5),
+                #ffffff;  /* 實心白色背景，避免透明 */
+            border: 2px solid #555;
+            border-radius: 16px;  /* 調整圓角大小，避免縫隙 */
+            display: grid;
+            grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            gap: 8px;
+            padding: 15px;
+            box-shadow:
+                inset 2px 2px 8px rgba(255,255,255,0.9),
+                inset -2px -2px 8px rgba(0,0,0,0.15),
+                0 8px 20px rgba(0,0,0,0.25);
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+            overflow: hidden;  /* 確保內容不會超出邊界 */
+        }
+
+        /* Position each face in 3D space - slightly larger to avoid gaps */
+        .dice-face.face-1 { transform: rotateY(0deg) translateZ(51px); }
+        .dice-face.face-2 { transform: rotateY(90deg) translateZ(51px); }
+        .dice-face.face-3 { transform: rotateX(90deg) translateZ(51px); }
+        .dice-face.face-4 { transform: rotateX(-90deg) translateZ(51px); }
+        .dice-face.face-5 { transform: rotateY(-90deg) translateZ(51px); }
+        .dice-face.face-6 { transform: rotateY(180deg) translateZ(51px); }
+
+        /* Dice dots */
+        .dot {
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle at 35% 35%, #444, #222, #111);
+            border-radius: 50%;
+            box-shadow:
+                inset -1px -1px 2px rgba(255,255,255,0.2),
+                inset 2px 2px 4px rgba(0,0,0,0.5),
+                0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .dot { grid-area: auto; }
+
+        /* Face 1: center dot */
+        .face-1 .dot:nth-child(1) { grid-area: 2 / 2; }
+
+        /* Face 2: diagonal dots */
+        .face-2 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-2 .dot:nth-child(2) { grid-area: 3 / 3; }
+
+        /* Face 3: diagonal with center */
+        .face-3 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-3 .dot:nth-child(2) { grid-area: 2 / 2; }
+        .face-3 .dot:nth-child(3) { grid-area: 3 / 3; }
+
+        /* Face 4: four corners */
+        .face-4 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-4 .dot:nth-child(2) { grid-area: 1 / 3; }
+        .face-4 .dot:nth-child(3) { grid-area: 3 / 1; }
+        .face-4 .dot:nth-child(4) { grid-area: 3 / 3; }
+
+        /* Face 5: four corners + center */
+        .face-5 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-5 .dot:nth-child(2) { grid-area: 1 / 3; }
+        .face-5 .dot:nth-child(3) { grid-area: 2 / 2; }
+        .face-5 .dot:nth-child(4) { grid-area: 3 / 1; }
+        .face-5 .dot:nth-child(5) { grid-area: 3 / 3; }
+
+        /* Face 6: two columns of three */
+        .face-6 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-6 .dot:nth-child(2) { grid-area: 1 / 3; }
+        .face-6 .dot:nth-child(3) { grid-area: 2 / 1; }
+        .face-6 .dot:nth-child(4) { grid-area: 2 / 3; }
+        .face-6 .dot:nth-child(5) { grid-area: 3 / 1; }
+        .face-6 .dot:nth-child(6) { grid-area: 3 / 3; }
+
+        /* Shadow under dice */
+        .dice-shadow {
+            display: none; /* 移除陰影 */
+        }
 
         /* Dealer hand for sweeping */
         .dealer-hand {
@@ -716,7 +809,42 @@
 
         <!-- Dice Display -->
         <div class="dice-area">
-            <div class="dice" id="dice1" data-value="1"></div>
+            <div class="dice-container" id="dice1">
+                <div class="dice-face face-1">
+                    <div class="dot"></div>
+                </div>
+                <div class="dice-face face-2">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <div class="dice-face face-3">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <div class="dice-face face-4">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <div class="dice-face face-5">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <div class="dice-face face-6">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+            <div class="dice-shadow"></div>
         </div>
 
         <!-- Dealer Hand -->
@@ -903,6 +1031,16 @@
             init() {
                 SoundEffects.init();
                 this.setupEventListeners();
+
+                // Initialize dice to show face 1
+                const die = document.getElementById('dice1');
+                gsap.set(die, {
+                    rotateX: 0,
+                    rotateY: 0,
+                    rotateZ: 0,
+                    y: 0
+                });
+
                 this.updateUI();
             },
 
@@ -1052,8 +1190,14 @@
                 document.querySelectorAll('.bet-indicator').forEach(el => el.remove());
                 document.querySelectorAll('.chip').forEach(el => el.remove());
 
-                // Reset dice display
-                document.getElementById('dice1').setAttribute('data-value', '1');
+                // Reset dice display to face 1
+                const die = document.getElementById('dice1');
+                gsap.set(die, {
+                    rotateX: 0,
+                    rotateY: 0,
+                    rotateZ: 0,
+                    y: 0
+                });
 
                 // Update UI
                 document.getElementById('current-bet').textContent = '0';
@@ -1197,33 +1341,96 @@
 
             async animateDiceRoll() {
                 const die = document.getElementById('dice1');
+                const shadow = document.querySelector('.dice-shadow');
 
-                // Spinning animation
-                const spinDuration = 2;
+                // Generate random result first
+                this.diceResult = Math.floor(Math.random() * 6) + 1;
 
-                await new Promise(resolve => {
-                    const interval = setInterval(() => {
-                        const randomValue = Math.floor(Math.random() * 6) + 1;
-                        die.setAttribute('data-value', randomValue);
-                    }, 100);
+                // Define final rotation for each face (to show that face on top)
+                const faceRotations = {
+                    1: { x: 0, y: 0, z: 0 },           // Face 1 on top
+                    2: { x: 0, y: -90, z: 0 },         // Face 2 on top
+                    3: { x: -90, y: 0, z: 0 },         // Face 3 on top
+                    4: { x: 90, y: 0, z: 0 },          // Face 4 on top
+                    5: { x: 0, y: 90, z: 0 },          // Face 5 on top
+                    6: { x: 0, y: 180, z: 0 }          // Face 6 on top
+                };
 
-                    gsap.to(die, {
-                        duration: spinDuration,
-                        rotation: 720,
-                        scale: 1.3,
-                        ease: 'power2.inOut',
-                        yoyo: true,
-                        onComplete: () => {
-                            clearInterval(interval);
-                            this.diceResult = Math.floor(Math.random() * 6) + 1;
-                            die.setAttribute('data-value', this.diceResult);
-                            gsap.set(die, { rotation: 0, scale: 1 });
-                            resolve();
-                        }
-                    });
+                // Add random extra spins (2-4 full rotations) for unpredictability
+                const extraSpinsX = 2 + Math.floor(Math.random() * 3);
+                const extraSpinsY = 2 + Math.floor(Math.random() * 3);
+                const extraSpinsZ = 1 + Math.floor(Math.random() * 2);
+
+                const finalRotation = faceRotations[this.diceResult];
+                const totalRotationX = finalRotation.x + (360 * extraSpinsX);
+                const totalRotationY = finalRotation.y + (360 * extraSpinsY);
+                const totalRotationZ = finalRotation.z + (360 * extraSpinsZ);
+
+                // Create rolling animation with bounce and 3D tumbling
+                const timeline = gsap.timeline();
+
+                // Phase 1: Throw upward with fast spinning (random initial rotation)
+                timeline.to(die, {
+                    duration: 0.5,
+                    y: -70,
+                    scale: 1.1,
+                    rotateX: 220 + Math.random() * 80,
+                    rotateY: 220 + Math.random() * 80,
+                    rotateZ: 100 + Math.random() * 60,
+                    ease: 'power2.out'
                 });
 
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Phase 2: Fall and tumble with chaotic rotation
+                timeline.to(die, {
+                    duration: 1.4,
+                    y: 0,
+                    scale: 1,
+                    rotateX: totalRotationX + (Math.random() - 0.5) * 30,
+                    rotateY: totalRotationY + (Math.random() - 0.5) * 30,
+                    rotateZ: totalRotationZ + (Math.random() - 0.5) * 20,
+                    ease: 'power2.inOut'
+                });
+
+                // Phase 3: Bounce effect with slight rotation adjustment
+                timeline.to(die, {
+                    duration: 0.25,
+                    y: -12,
+                    rotateX: totalRotationX + (Math.random() - 0.5) * 15,
+                    rotateY: totalRotationY + (Math.random() - 0.5) * 15,
+                    ease: 'power2.out'
+                });
+
+                timeline.to(die, {
+                    duration: 0.25,
+                    y: 0,
+                    ease: 'bounce.out'
+                });
+
+                // Phase 4: Small settling wobbles
+                timeline.to(die, {
+                    duration: 0.15,
+                    rotateZ: totalRotationZ + 8,
+                    rotateX: totalRotationX + 3,
+                    ease: 'power1.inOut'
+                });
+
+                timeline.to(die, {
+                    duration: 0.15,
+                    rotateZ: totalRotationZ - 3,
+                    rotateX: totalRotationX - 1,
+                    ease: 'power1.inOut'
+                });
+
+                timeline.to(die, {
+                    duration: 0.15,
+                    rotateZ: totalRotationZ,
+                    rotateX: totalRotationX,
+                    rotateY: totalRotationY,
+                    ease: 'power1.inOut'
+                });
+
+                await timeline.then();
+                await new Promise(resolve => setTimeout(resolve, 200));
             },
 
             async sweepLosingBets(losingBets) {
