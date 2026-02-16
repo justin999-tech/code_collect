@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣新年骰子遊戲 - Taiwanese Dice Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #2c1810 0%, #4a2c1a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            position: relative;
+            width: 90vw;
+            max-width: 1200px;
+            height: 80vh;
+            max-height: 800px;
+        }
+
+        /* Wooden table background */
+        .table {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(90deg, rgba(139,69,19,0.1) 1px, transparent 1px),
+                linear-gradient(rgba(139,69,19,0.1) 1px, transparent 1px),
+                linear-gradient(135deg, #8B4513 0%, #654321 50%, #8B4513 100%);
+            background-size: 50px 50px, 50px 50px, 100% 100%;
+            border-radius: 20px;
+            box-shadow:
+                inset 0 0 50px rgba(0,0,0,0.5),
+                0 20px 50px rgba(0,0,0,0.8);
+            filter: sepia(0.3) brightness(0.8);
+        }
+
+        /* Game board paper */
+        .game-board {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 1000px;
+            height: 50%;
+            background: linear-gradient(135deg, #f5e6d3 0%, #efe0cd 100%);
+            border: 3px solid #8B4513;
+            box-shadow:
+                0 10px 30px rgba(0,0,0,0.5),
+                inset 0 0 100px rgba(101,67,33,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            filter: contrast(1.1);
+        }
+
+        /* Paper texture overlay */
+        .game-board::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 20% 80%, rgba(139,69,19,0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139,69,19,0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Number section - horizontal 1-6 */
+        .numbers-section {
+            flex: 3;
+            display: flex;
+            gap: 8px;
+            position: relative;
+        }
+
+        /* Big/Small section */
+        .bigsmall-section {
+            flex: 1;
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Number slots - vertical rectangles */
+        .number-slot {
+            position: relative;
+            flex: 1;
+            border: 3px dashed rgba(139,69,19,0.5);
+            background: rgba(255,255,255,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .number-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .number-slot:hover {
+            background: rgba(255,215,0,0.3);
+            border-color: rgba(139,69,19,0.8);
+            transform: scale(1.05);
+        }
+
+        .number-slot.active {
+            background: rgba(255,215,0,0.5);
+            border-color: #DAA520;
+            box-shadow: 0 0 20px rgba(218,165,32,0.6);
+        }
+
+        .number-label {
+            font-size: 56px;
+            font-weight: bold;
+            color: #8B4513;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        /* Line bet areas - horizontal between numbers */
+        .line-bet {
+            position: relative;
+            width: 35px;
+            background: rgba(139,69,19,0.2);
+            border: 2px solid rgba(139,69,19,0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 11px;
+            color: #654321;
+            font-weight: bold;
+            writing-mode: horizontal-tb;
+        }
+
+        .line-bet:hover {
+            background: rgba(255,215,0,0.4);
+            border-color: #DAA520;
+        }
+
+        .line-bet.active {
+            background: rgba(255,215,0,0.6);
+            border-color: #DAA520;
+            box-shadow: 0 0 15px rgba(218,165,32,0.6);
+        }
+
+        /* Big/Small areas */
+        .big-small-area {
+            position: relative;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 4px solid rgba(139,69,19,0.6);
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .big-small-area:hover {
+            background: rgba(255,215,0,0.3);
+            border-color: rgba(139,69,19,0.9);
+        }
+
+        .big-small-area.active {
+            background: rgba(255,215,0,0.5);
+            border-color: #DAA520;
+            box-shadow: 0 0 25px rgba(218,165,32,0.6);
+        }
+
+        .big-small-label {
+            font-size: 36px;
+            font-weight: bold;
+            color: #8B4513;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            font-family: 'Arial Black', sans-serif;
+            text-align: center;
+            display: block;
+        }
+
+        .chinese-label {
+            font-size: 28px;
+            display: block;
+            margin-top: -3px;
+            text-align: center;
+        }
+
+        /* Player controls */
+        .player-area {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(139,69,19,0.95);
+            padding: 15px 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            z-index: 150;
+        }
+
+        .balance {
+            font-size: 20px;
+            color: #FFD700;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            min-width: 100px;
+        }
+
+        .balance.positive {
+            color: #00FF00;
+        }
+
+        .balance.negative {
+            color: #FF4444;
+        }
+
+        .bet-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .bet-amount {
+            font-size: 16px;
+            color: #fff;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 16px;
+            border-radius: 8px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .chip-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #654321;
+        }
+
+        .chip-btn.decrease {
+            background: linear-gradient(135deg, #FF6B6B, #EE5A5A);
+            color: white;
+        }
+
+        .chip-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .roll-btn {
+            background: linear-gradient(135deg, #FF4444, #CC0000);
+            color: white !important;
+            font-size: 16px;
+            padding: 12px 30px;
+        }
+
+        .roll-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(255,68,68,0.6);
+        }
+
+        .roll-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .clear-btn {
+            background: linear-gradient(135deg, #888, #555);
+            color: white;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #9B59B6, #8E44AD);
+            color: white;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(155,89,182,0.6);
+        }
+
+        /* Rules panel */
+        .rules-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+
+        .rules-toggle-btn {
+            background: rgba(139,69,19,0.95);
+            border: 3px solid #8B4513;
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #FFD700;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .rules-toggle-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            background: rgba(139,69,19,1);
+        }
+
+        .rules-toggle-icon {
+            font-size: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .rules-toggle-btn.expanded .rules-toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .rules-content-panel {
+            background: rgba(139,69,19,0.95);
+            border: 3px solid #8B4513;
+            border-radius: 12px;
+            padding: 0 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            min-width: 220px;
+            margin-top: 10px;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        .rules-content-panel.expanded {
+            max-height: 500px;
+            opacity: 1;
+            padding: 15px 20px;
+        }
+
+        .rules-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 8px;
+        }
+
+        .rules-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .rule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #FFF;
+            font-size: 14px;
+            padding: 6px 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .rule-item:hover {
+            background: rgba(255,215,0,0.2);
+            transform: translateX(3px);
+        }
+
+        .rule-name {
+            font-weight: bold;
+            color: #FFE4B5;
+        }
+
+        .rule-payout {
+            color: #90EE90;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .rule-section {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .rule-section:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        /* Undo button */
+        .back-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(139,69,19,0.95);
+            border: 3px solid #8B4513;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #FFD700;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .back-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            background: rgba(139,69,19,1);
+        }
+
+        .back-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Chips */
+        .chip {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #FFD700, #DAA520);
+            border: 3px solid #B8860B;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #654321;
+            font-size: 14px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Dice area */
+        .dice-area {
+            position: absolute;
+            top: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            flex-direction: column;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .dice {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border: 4px solid #333;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 72px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+            position: relative;
+        }
+
+        .dice::before {
+            content: '⚀';
+            font-size: 72px;
+        }
+
+        .dice[data-value="1"]::before { content: '⚀'; }
+        .dice[data-value="2"]::before { content: '⚁'; }
+        .dice[data-value="3"]::before { content: '⚂'; }
+        .dice[data-value="4"]::before { content: '⚃'; }
+        .dice[data-value="5"]::before { content: '⚄'; }
+        .dice[data-value="6"]::before { content: '⚅'; }
+
+        /* Dealer hand for sweeping */
+        .dealer-hand {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle at 40% 40%, #f4c49c, #d4a574);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 200;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        .dealer-hand::after {
+            content: '🖐️';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            font-size: 72px;
+        }
+
+        /* Game messages */
+        .message-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #FFD700;
+            padding: 30px 60px;
+            border-radius: 20px;
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 300;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            border: 3px solid #FFD700;
+        }
+
+        /* Bet indicators */
+        .bet-indicator {
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(218,165,32,0.95);
+            color: #654321;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Smaller indicator for line bets */
+        .line-bet .bet-indicator {
+            font-size: 10px;
+            padding: 2px 4px;
+        }
+
+        /* Right-bottom position for Big/Small areas */
+        .big-small-area .bet-indicator {
+            left: auto;
+            right: 8px;
+            transform: none;
+            font-size: 14px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="table"></div>
+
+        <!-- Rules Panel -->
+        <div class="rules-panel">
+            <div class="rules-toggle-btn" id="rulesToggle" onclick="game.toggleRules()">
+                <span class="rules-toggle-icon">📋</span>
+                <span>遊戲規則</span>
+            </div>
+
+            <div class="rules-content-panel" id="rulesContent">
+                <div class="rules-title">遊戲規則 Rules</div>
+                <div class="rules-content">
+                    <div class="rule-section">
+                        <div class="rule-item">
+                            <span class="rule-name">單號 (1-6)</span>
+                            <span class="rule-payout">1:5</span>
+                        </div>
+                    </div>
+
+                    <div class="rule-section">
+                        <div class="rule-item">
+                            <span class="rule-name">連線 (1-2, 2-3...)</span>
+                            <span class="rule-payout">1:2</span>
+                        </div>
+                    </div>
+
+                    <div class="rule-section">
+                        <div class="rule-item">
+                            <span class="rule-name">小 (1-3)</span>
+                            <span class="rule-payout">1:1</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-name">大 (4-6)</span>
+                            <span class="rule-payout">1:1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Undo Button -->
+        <div class="back-button" onclick="game.undoLastBet()">
+            <span>↶</span>
+            <span>UNDO</span>
+        </div>
+
+        <div class="game-board">
+            <!-- Top Section: Numbers 1-6 horizontally with line bets between -->
+            <div class="numbers-section">
+                <div class="number-slot" data-bet-type="single" data-value="1">
+                    <span class="number-label">1</span>
+                </div>
+
+                <div class="line-bet" data-bet-type="line" data-value="1-2">
+                    <span>1-2</span>
+                </div>
+
+                <div class="number-slot" data-bet-type="single" data-value="2">
+                    <span class="number-label">2</span>
+                </div>
+
+                <div class="line-bet" data-bet-type="line" data-value="2-3">
+                    <span>2-3</span>
+                </div>
+
+                <div class="number-slot" data-bet-type="single" data-value="3">
+                    <span class="number-label">3</span>
+                </div>
+
+                <!-- No line bet between 3-4 (crosses Big/Small boundary) -->
+                <div style="width: 35px;"></div>
+
+                <div class="number-slot" data-bet-type="single" data-value="4">
+                    <span class="number-label">4</span>
+                </div>
+
+                <div class="line-bet" data-bet-type="line" data-value="4-5">
+                    <span>4-5</span>
+                </div>
+
+                <div class="number-slot" data-bet-type="single" data-value="5">
+                    <span class="number-label">5</span>
+                </div>
+
+                <div class="line-bet" data-bet-type="line" data-value="5-6">
+                    <span>5-6</span>
+                </div>
+
+                <div class="number-slot" data-bet-type="single" data-value="6">
+                    <span class="number-label">6</span>
+                </div>
+            </div>
+
+            <!-- Bottom Section: Big/Small -->
+            <div class="bigsmall-section">
+                <div class="big-small-area" data-bet-type="small" data-value="small">
+                    <div style="text-align: center; width: 100%;">
+                        <span class="big-small-label">SMALL</span>
+                        <span class="big-small-label chinese-label">小</span>
+                    </div>
+                </div>
+
+                <div class="big-small-area" data-bet-type="big" data-value="big">
+                    <div style="text-align: center; width: 100%;">
+                        <span class="big-small-label">BIG</span>
+                        <span class="big-small-label chinese-label">大</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dice Display -->
+        <div class="dice-area">
+            <div class="dice" id="dice1" data-value="1"></div>
+        </div>
+
+        <!-- Dealer Hand -->
+        <div class="dealer-hand"></div>
+
+        <!-- Message Overlay -->
+        <div class="message-overlay"></div>
+
+        <!-- Player Controls -->
+        <div class="player-area">
+            <div class="balance" id="balance-display">$0</div>
+            <div class="bet-controls">
+                <button class="chip-btn decrease" onclick="game.changeBetAmount(-10)">-$10</button>
+                <button class="chip-btn decrease" onclick="game.changeBetAmount(-50)">-$50</button>
+                <button class="chip-btn" onclick="game.changeBetAmount(10)">+$10</button>
+                <button class="chip-btn" onclick="game.changeBetAmount(50)">+$50</button>
+                <button class="chip-btn" onclick="game.changeBetAmount(100)">+$100</button>
+            </div>
+            <div class="bet-amount">Bet: $<span id="current-bet">0</span></div>
+            <button class="clear-btn" onclick="game.clearBets()">Clear Bets</button>
+            <button class="reset-btn" onclick="game.resetGame()">🔄 RESET</button>
+            <button class="roll-btn" id="roll-btn" onclick="game.rollDice()">🎲 ROLL DICE</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script>
+        // Sound Effects Manager
+        const SoundEffects = {
+            audioContext: null,
+
+            init() {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            },
+
+            playChipSound() {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.frequency.value = 800;
+                osc.type = 'sine';
+
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.1);
+            },
+
+            playDiceRoll() {
+                const ctx = this.audioContext;
+                // Multiple bounces to simulate dice hitting table
+                const bounces = [
+                    { time: 0, freq: 300, duration: 0.08, volume: 0.7 },      // 第一次碰撞音量
+                    { time: 0.12, freq: 280, duration: 0.06, volume: 0.55 },  // 第二次碰撞音量
+                    { time: 0.22, freq: 260, duration: 0.05, volume: 0.44 },  // 第三次碰撞音量
+                    { time: 0.3, freq: 240, duration: 0.04, volume: 0.35 },   // 第四次碰撞音量
+                    { time: 0.37, freq: 220, duration: 0.03, volume: 0.26 },  // 第五次碰撞音量
+                    { time: 0.43, freq: 200, duration: 0.03, volume: 0.18 }   // 第六次碰撞音量
+                ];
+
+                bounces.forEach(bounce => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    const filter = ctx.createBiquadFilter();
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.frequency.value = bounce.freq;
+                    osc.type = 'triangle';
+
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 800;
+
+                    const startTime = ctx.currentTime + bounce.time;
+                    gain.gain.setValueAtTime(bounce.volume, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + bounce.duration);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + bounce.duration);
+                });
+            },
+
+            playWinSound() {
+                const ctx = this.audioContext;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C
+
+                notes.forEach((freq, index) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+
+                    const startTime = ctx.currentTime + index * 0.1;
+                    gain.gain.setValueAtTime(0.3, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.3);
+                });
+
+                // Add coin sound effect
+                setTimeout(() => {
+                    for (let i = 0; i < 5; i++) {
+                        setTimeout(() => this.playCoinDrop(), i * 50);
+                    }
+                }, 200);
+            },
+
+            playLoseSound() {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.5);
+                osc.type = 'sawtooth';
+
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+            },
+
+            playCoinDrop() {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.frequency.value = 1000 + Math.random() * 200;
+                osc.type = 'sine';
+
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.1);
+            },
+
+            playButtonClick() {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.frequency.value = 600;
+                osc.type = 'sine';
+
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.05);
+            }
+        };
+
+        const game = {
+            balance: 0,
+            currentBetAmount: 0,
+            bets: {},
+            betHistory: [],
+            isRolling: false,
+            diceResult: 1,
+
+            init() {
+                SoundEffects.init();
+                this.setupEventListeners();
+                this.updateUI();
+            },
+
+            setupEventListeners() {
+                // Add click handlers to all betting areas
+                document.querySelectorAll('[data-bet-type]').forEach(area => {
+                    area.addEventListener('click', (e) => {
+                        if (!this.isRolling) {
+                            this.placeBet(area);
+                        }
+                    });
+                });
+            },
+
+            changeBetAmount(amount) {
+                SoundEffects.playButtonClick();
+                this.currentBetAmount += amount;
+                if (this.currentBetAmount < 0) this.currentBetAmount = 0;
+                document.getElementById('current-bet').textContent = this.currentBetAmount;
+            },
+
+            placeBet(area) {
+                const betType = area.dataset.betType;
+                const betValue = area.dataset.value;
+                const betKey = `${betType}-${betValue}`;
+
+                // Check if bet amount is valid
+                if (this.currentBetAmount <= 0) {
+                    this.showMessage('請先設定下注金額！', 'error');
+                    return;
+                }
+
+                // Initialize bet if not exists
+                if (!this.bets[betKey]) {
+                    this.bets[betKey] = {
+                        type: betType,
+                        value: betValue,
+                        amount: 0,
+                        element: area,
+                        chips: []
+                    };
+                }
+
+                // Add to bet amount
+                this.bets[betKey].amount += this.currentBetAmount;
+                this.balance -= this.currentBetAmount;
+
+                // Record bet in history for undo
+                this.betHistory.push({
+                    betKey: betKey,
+                    amount: this.currentBetAmount,
+                    area: area
+                });
+
+                // Play chip sound
+                SoundEffects.playChipSound();
+
+                // Animate chip placement
+                this.animateChipPlacement(area, this.currentBetAmount);
+
+                // Update UI
+                area.classList.add('active');
+                this.updateBetIndicator(area, this.bets[betKey].amount);
+                this.updateUI();
+            },
+
+            animateChipPlacement(targetElement, amount) {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.textContent = `$${amount}`;
+
+                // Start from player area
+                const playerArea = document.querySelector('.player-area');
+                const playerRect = playerArea.getBoundingClientRect();
+                const targetRect = targetElement.getBoundingClientRect();
+
+                chip.style.left = `${playerRect.left + playerRect.width / 2}px`;
+                chip.style.top = `${playerRect.top}px`;
+
+                document.body.appendChild(chip);
+
+                // Animate to target
+                gsap.to(chip, {
+                    duration: 0.6,
+                    left: targetRect.left + targetRect.width / 2 - 20,
+                    top: targetRect.top + targetRect.height / 2 - 20,
+                    ease: 'power2.out',
+                    onComplete: () => {
+                        chip.remove();
+                    }
+                });
+
+                // Store chip reference
+                const betKey = `${targetElement.dataset.betType}-${targetElement.dataset.value}`;
+                if (this.bets[betKey]) {
+                    this.bets[betKey].chips.push(chip);
+                }
+            },
+
+            updateBetIndicator(element, amount) {
+                let indicator = element.querySelector('.bet-indicator');
+                if (!indicator) {
+                    indicator = document.createElement('div');
+                    indicator.className = 'bet-indicator';
+                    element.appendChild(indicator);
+                }
+                indicator.textContent = `$${amount}`;
+            },
+
+            clearBets() {
+                if (this.isRolling) return;
+
+                SoundEffects.playButtonClick();
+
+                // Return money
+                Object.values(this.bets).forEach(bet => {
+                    this.balance += bet.amount;
+                });
+
+                // Clear bet data
+                this.bets = {};
+                this.betHistory = [];
+
+                // Clear UI
+                document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.bet-indicator').forEach(el => el.remove());
+                document.querySelectorAll('.chip').forEach(el => el.remove());
+
+                this.updateUI();
+                this.showMessage('Bets cleared!', 'info');
+            },
+
+            resetGame() {
+                if (this.isRolling) return;
+
+                SoundEffects.playButtonClick();
+
+                // Reset all game state
+                this.balance = 0;
+                this.currentBetAmount = 0;
+                this.bets = {};
+                this.betHistory = [];
+                this.diceResult = 1;
+
+                // Clear UI
+                document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.bet-indicator').forEach(el => el.remove());
+                document.querySelectorAll('.chip').forEach(el => el.remove());
+
+                // Reset dice display
+                document.getElementById('dice1').setAttribute('data-value', '1');
+
+                // Update UI
+                document.getElementById('current-bet').textContent = '0';
+                this.updateUI();
+
+                this.showMessage('Game Reset! 🔄', 'info');
+            },
+
+            toggleRules() {
+                const toggleBtn = document.getElementById('rulesToggle');
+                const contentPanel = document.getElementById('rulesContent');
+
+                toggleBtn.classList.toggle('expanded');
+                contentPanel.classList.toggle('expanded');
+            },
+
+            undoLastBet() {
+                if (this.isRolling) return;
+
+                if (this.betHistory.length === 0) {
+                    this.showMessage('No bets to undo!', 'info');
+                    return;
+                }
+
+                SoundEffects.playButtonClick();
+
+                // Get last bet from history
+                const lastBet = this.betHistory.pop();
+                const { betKey, amount, area } = lastBet;
+
+                // Return money
+                this.balance += amount;
+
+                // Reduce bet amount
+                if (this.bets[betKey]) {
+                    this.bets[betKey].amount -= amount;
+
+                    // If bet amount is 0, remove it completely
+                    if (this.bets[betKey].amount <= 0) {
+                        delete this.bets[betKey];
+                        area.classList.remove('active');
+                        const indicator = area.querySelector('.bet-indicator');
+                        if (indicator) indicator.remove();
+                    } else {
+                        // Update bet indicator
+                        this.updateBetIndicator(area, this.bets[betKey].amount);
+                    }
+                }
+
+                this.updateUI();
+                this.showMessage('Last bet undone! 🔙', 'info');
+            },
+
+            async rollDice() {
+                if (this.isRolling || Object.keys(this.bets).length === 0) {
+                    if (Object.keys(this.bets).length === 0) {
+                        this.showMessage('Place a bet first!', 'error');
+                    }
+                    return;
+                }
+
+                this.isRolling = true;
+                document.getElementById('roll-btn').disabled = true;
+
+                // Play dice roll sound
+                SoundEffects.playDiceRoll();
+
+                // Roll animation
+                await this.animateDiceRoll();
+
+                // Calculate results (single die: Big = 4-6, Small = 1-3)
+                const isBig = this.diceResult >= 4 && this.diceResult <= 6;
+                const isSmall = this.diceResult >= 1 && this.diceResult <= 3;
+
+                // Determine winning bets
+                const winningBets = [];
+                const losingBets = [];
+
+                Object.entries(this.bets).forEach(([key, bet]) => {
+                    let isWinner = false;
+                    let payout = 0;
+
+                    if (bet.type === 'single') {
+                        if (this.diceResult === parseInt(bet.value)) {
+                            isWinner = true;
+                            payout = bet.amount * 5; // 1:5 payout
+                        }
+                    } else if (bet.type === 'line') {
+                        const [num1, num2] = bet.value.split('-').map(Number);
+                        if (this.diceResult === num1 || this.diceResult === num2) {
+                            isWinner = true;
+                            payout = bet.amount * 2; // 1:2 payout
+                        }
+                    } else if (bet.type === 'big' && isBig) {
+                        isWinner = true;
+                        payout = bet.amount * 1; // 1:1 payout
+                    } else if (bet.type === 'small' && isSmall) {
+                        isWinner = true;
+                        payout = bet.amount * 1; // 1:1 payout
+                    }
+
+                    if (isWinner) {
+                        winningBets.push({ ...bet, payout });
+                    } else {
+                        losingBets.push(bet);
+                    }
+                });
+
+                // Sweep away losing bets
+                await this.sweepLosingBets(losingBets);
+
+                // Pay out winning bets
+                await this.payoutWinningBets(winningBets);
+
+                // Show result message
+                const totalWin = winningBets.reduce((sum, bet) => sum + bet.payout, 0);
+                const totalLoss = losingBets.reduce((sum, bet) => sum + bet.amount, 0);
+                const netResult = totalWin - totalLoss;
+
+                if (netResult > 0) {
+                    SoundEffects.playWinSound();
+                    this.showMessage(`You Won $${netResult}! 🎉`, 'win');
+                } else if (netResult < 0) {
+                    SoundEffects.playLoseSound();
+                    this.showMessage(`You Lost $${Math.abs(netResult)} 😔`, 'loss');
+                } else {
+                    SoundEffects.playButtonClick();
+                    this.showMessage('Break Even!', 'info');
+                }
+
+                // Reset for next round
+                this.bets = {};
+                this.betHistory = [];
+                document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.bet-indicator').forEach(el => el.remove());
+
+                this.isRolling = false;
+                document.getElementById('roll-btn').disabled = false;
+                this.updateUI();
+            },
+
+            async animateDiceRoll() {
+                const die = document.getElementById('dice1');
+
+                // Spinning animation
+                const spinDuration = 2;
+
+                await new Promise(resolve => {
+                    const interval = setInterval(() => {
+                        const randomValue = Math.floor(Math.random() * 6) + 1;
+                        die.setAttribute('data-value', randomValue);
+                    }, 100);
+
+                    gsap.to(die, {
+                        duration: spinDuration,
+                        rotation: 720,
+                        scale: 1.3,
+                        ease: 'power2.inOut',
+                        yoyo: true,
+                        onComplete: () => {
+                            clearInterval(interval);
+                            this.diceResult = Math.floor(Math.random() * 6) + 1;
+                            die.setAttribute('data-value', this.diceResult);
+                            gsap.set(die, { rotation: 0, scale: 1 });
+                            resolve();
+                        }
+                    });
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+            },
+
+            async sweepLosingBets(losingBets) {
+                if (losingBets.length === 0) return;
+
+                const dealerHand = document.querySelector('.dealer-hand');
+
+                for (const bet of losingBets) {
+                    const rect = bet.element.getBoundingClientRect();
+
+                    // Position dealer hand
+                    gsap.set(dealerHand, {
+                        left: rect.left - 75,
+                        top: rect.top - 75,
+                        opacity: 1
+                    });
+
+                    // Sweep across the betting area
+                    await gsap.to(dealerHand, {
+                        duration: 0.5,
+                        left: rect.right + 50,
+                        ease: 'power2.inOut'
+                    });
+
+                    // Hide bet indicator
+                    const indicator = bet.element.querySelector('.bet-indicator');
+                    if (indicator) {
+                        gsap.to(indicator, {
+                            duration: 0.3,
+                            opacity: 0,
+                            scale: 0,
+                            onComplete: () => indicator.remove()
+                        });
+                    }
+                }
+
+                // Hide dealer hand
+                await gsap.to(dealerHand, {
+                    duration: 0.3,
+                    opacity: 0
+                });
+            },
+
+            async payoutWinningBets(winningBets) {
+                if (winningBets.length === 0) return;
+
+                const playerArea = document.querySelector('.player-area');
+                const playerRect = playerArea.getBoundingClientRect();
+
+                for (const bet of winningBets) {
+                    const rect = bet.element.getBoundingClientRect();
+                    const totalPayout = bet.amount + bet.payout;
+                    const numChips = Math.ceil(bet.payout / 10);
+
+                    // Create and animate payout chips
+                    const chipPromises = [];
+                    for (let i = 0; i < numChips; i++) {
+                        const chip = document.createElement('div');
+                        chip.className = 'chip';
+                        chip.textContent = `$${Math.floor(bet.payout / numChips)}`;
+
+                        chip.style.left = `${rect.left + rect.width / 2 - 20}px`;
+                        chip.style.top = `${rect.top + rect.height / 2 - 20}px`;
+
+                        document.body.appendChild(chip);
+
+                        const promise = gsap.to(chip, {
+                            duration: 0.8,
+                            left: playerRect.left + playerRect.width / 2 - 20 + (Math.random() - 0.5) * 40,
+                            top: playerRect.top + (Math.random() - 0.5) * 30,
+                            delay: i * 0.05,
+                            ease: 'power2.inOut',
+                            onStart: () => {
+                                // Play coin sound when chip starts flying back
+                                SoundEffects.playCoinDrop();
+                            },
+                            onComplete: () => {
+                                chip.remove();
+                            }
+                        });
+
+                        chipPromises.push(promise);
+                    }
+
+                    // Add winnings to balance
+                    this.balance += totalPayout;
+
+                    await Promise.all(chipPromises);
+                }
+
+                this.updateUI();
+            },
+
+            showMessage(text, type) {
+                const overlay = document.querySelector('.message-overlay');
+                overlay.textContent = text;
+
+                gsap.timeline()
+                    .to(overlay, {
+                        duration: 0.3,
+                        opacity: 1,
+                        scale: 1.1,
+                        ease: 'back.out'
+                    })
+                    .to(overlay, {
+                        duration: 0.3,
+                        opacity: 0,
+                        scale: 0.9,
+                        delay: 1.5,
+                        ease: 'power2.in'
+                    });
+            },
+
+            updateUI() {
+                const balanceDisplay = document.getElementById('balance-display');
+
+                // Display balance with +/- format
+                if (this.balance > 0) {
+                    balanceDisplay.textContent = `+$${this.balance}`;
+                    balanceDisplay.className = 'balance positive';
+                } else if (this.balance < 0) {
+                    balanceDisplay.textContent = `-$${Math.abs(this.balance)}`;
+                    balanceDisplay.className = 'balance negative';
+                } else {
+                    balanceDisplay.textContent = '$0';
+                    balanceDisplay.className = 'balance';
+                }
+
+                // Disable roll button if no bets
+                const rollBtn = document.getElementById('roll-btn');
+                if (Object.keys(this.bets).length === 0) {
+                    rollBtn.style.opacity = '0.5';
+                } else {
+                    rollBtn.style.opacity = '1';
+                }
+            }
+        };
+
+        // Initialize game when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            game.init();
+        });
+    </script>
+</body>
+</html>

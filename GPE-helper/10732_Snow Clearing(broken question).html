@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Snowman Operations Command | UVa 10203</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050a14;
+            --grid-color: #1a2332;
+            --panel-bg: rgba(16, 24, 40, 0.85);
+            --accent-primary: #00f0ff;
+            --accent-secondary: #ff0055;
+            --text-main: #e0e6ed;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background-color: var(--bg-color); font-family: 'Inter', sans-serif; color: var(--text-main); }
+        canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+        canvas:active { cursor: grabbing; }
+
+        .panel {
+            position: absolute; background: var(--panel-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease; z-index: 10;
+        }
+
+        h2 { margin: 0 0 15px 0; font-weight: 600; letter-spacing: 0.5px; color: var(--accent-primary); font-size: 1.2rem; text-transform: uppercase; }
+        h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; }
+
+        #controls { top: 20px; left: 20px; width: 340px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+        .row { display: flex; gap: 10px; }
+        input[type="number"] {
+            background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: var(--accent-primary);
+            font-family: 'JetBrains Mono', monospace; padding: 10px; border-radius: 6px; width: 100%; outline: none; transition: border 0.2s;
+        }
+        input:focus { border-color: var(--accent-primary); }
+
+        button {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(0, 240, 255, 0.05)); border: 1px solid var(--accent-primary);
+            color: var(--accent-primary); padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; transition: all 0.2s; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+        }
+        button:hover { background: var(--accent-primary); color: #000; box-shadow: 0 0 15px var(--accent-primary); }
+        button.danger { border-color: var(--accent-secondary); color: var(--accent-secondary); background: linear-gradient(135deg, rgba(255, 0, 85, 0.1), rgba(255, 0, 85, 0.05)); }
+        button.danger:hover { background: var(--accent-secondary); color: #fff; box-shadow: 0 0 15px var(--accent-secondary); }
+
+        #road-list { flex-grow: 1; min-height: 100px; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 6px; padding: 5px; }
+        .road-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted); }
+        
+        #hud { top: 20px; right: 20px; width: 280px; border-left: 4px solid var(--accent-primary); }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+        .stat-val { color: #fff; font-weight: 700; font-size: 1.1rem; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        #status-indicator { margin-top: 15px; padding: 8px; background: rgba(0, 240, 255, 0.1); color: var(--accent-primary); text-align: center; border-radius: 4px; font-weight: bold; font-size: 0.9rem; animation: pulse 2s infinite; }
+
+        #logger { bottom: 20px; right: 20px; width: 400px; height: 150px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; overflow-y: auto; display: flex; flex-direction: column-reverse; border-top: 4px solid var(--accent-secondary); }
+        .log-entry { margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .log-type-travel { color: #4ade80; } .log-type-plow { color: var(--accent-secondary); }
+
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        @keyframes pulse { 0% { opacity: 0.8; box-shadow: 0 0 5px var(--accent-primary); } 50% { opacity: 1; box-shadow: 0 0 20px var(--accent-primary); } 100% { opacity: 0.8; box-shadow: 0 0 5px var(--accent-primary); } }
+        .slider-container { display: flex; align-items: center; gap: 10px; } input[type=range] { flex-grow: 1; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<canvas id="world"></canvas>
+
+<div id="controls" class="panel">
+    <h2>Snowman Command</h2>
+    <div class="input-group">
+        <label>Base (Hangar) Coordinates</label>
+        <div class="row">
+            <input type="number" id="hx" placeholder="X" value="0">
+            <input type="number" id="hy" placeholder="Y" value="0">
+        </div>
+    </div>
+    <div class="input-group">
+        <label>Add Road Segment</label>
+        <div class="row"><input type="number" id="x1" placeholder="X1"><input type="number" id="y1" placeholder="Y1"></div>
+        <div class="row"><input type="number" id="x2" placeholder="X2"><input type="number" id="y2" placeholder="Y2"></div>
+        <button id="btnAdd">Add Vector</button>
+    </div>
+    <div class="input-group">
+        <label>Mission Vectors</label>
+        <div id="road-list"><div style="text-align: center; color: var(--text-muted); padding: 10px;">No vectors defined.</div></div>
+    </div>
+    <div class="input-group">
+        <label>Sim Speed</label>
+        <div class="slider-container"><span style="font-size:0.7rem">1x</span><input type="range" id="simSpeed" min="100" max="2000" value="500"><span style="font-size:0.7rem">20x</span></div>
+    </div>
+    <button id="btnRun">Execute Mission</button>
+    <button id="btnReset" class="danger">Reset</button>
+</div>
+
+<div id="hud" class="panel">
+    <h3>Telemetry</h3>
+    <div class="stat-row"><span class="stat-label">DISTANCE</span><span class="stat-val" id="disp-dist">0.00 km</span></div>
+    <div class="stat-row"><span class="stat-label">TIME</span><span class="stat-val" id="disp-time">00:00</span></div>
+    <div class="stat-row"><span class="stat-label">PROGRESS</span><span class="stat-val" id="disp-prog">0%</span></div>
+    <div id="status-indicator">SYSTEM READY</div>
+</div>
+
+<div id="logger" class="panel"><div class="log-entry">System Initialized.</div></div>
+
+<script>
+const CONFIG = {
+    colors: { bg: '#050a14', grid: '#1a2332', roadUnplowed: '#334155', roadPlowed: '#ffffff', travelPath: '#4ade80', plowPath: '#f43f5e', hangar: '#00f0ff', vehicle: '#fbbf24' },
+    speeds: { travel: 50000, plow: 20000 }
+};
+
+const state = {
+    hangar: { x: 0, y: 0 }, roads: [], animQueue: [], isAnimating: false,
+    stats: { dist: 0, time: 0, completedTasks: 0, totalTasks: 0 },
+    camera: { x: 0, y: 0, zoom: 1 }, isDragging: false, lastMouse: { x: 0, y: 0 }, snow: []
+};
+
+const canvas = document.getElementById('world'); const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initSnow(); }
+window.addEventListener('resize', resize);
+function dist(p1, p2) { return Math.hypot(p1.x - p2.x, p1.y - p2.y); }
+function toScreen(x, y) { return { x: (x - state.camera.x) * state.camera.zoom + canvas.width/2, y: (y - state.camera.y) * state.camera.zoom + canvas.height/2 }; }
+function toWorld(sx, sy) { return { x: (sx - canvas.width/2) / state.camera.zoom + state.camera.x, y: (sy - canvas.height/2) / state.camera.zoom + state.camera.y }; }
+
+// Input Handlers
+canvas.addEventListener('mousedown', e => { state.isDragging = true; state.lastMouse = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('mousemove', e => {
+    if (state.isDragging) {
+        state.camera.x -= (e.clientX - state.lastMouse.x) / state.camera.zoom; state.camera.y -= (e.clientY - state.lastMouse.y) / state.camera.zoom;
+        state.lastMouse = { x: e.clientX, y: e.clientY };
+    }
+});
+canvas.addEventListener('mouseup', () => state.isDragging = false);
+canvas.addEventListener('wheel', e => { e.preventDefault(); state.camera.zoom *= Math.exp((e.deltaY < 0 ? 1 : -1) * 0.1); });
+
+// Render
+function initSnow() { state.snow = Array(150).fill().map(()=>({x:Math.random()*canvas.width, y:Math.random()*canvas.height, v:Math.random()+0.5})); }
+function draw() {
+    ctx.fillStyle = CONFIG.colors.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Grid
+    ctx.strokeStyle = CONFIG.colors.grid; ctx.lineWidth = 1; ctx.beginPath();
+    const sz = state.camera.zoom < 0.5 ? 1000 : 100;
+    const s = toWorld(0,0), e = toWorld(canvas.width, canvas.height);
+    for(let x=Math.floor(s.x/sz)*sz; x<e.x; x+=sz) { let p=toScreen(x,0); ctx.moveTo(p.x,0); ctx.lineTo(p.x,canvas.height); }
+    for(let y=Math.floor(s.y/sz)*sz; y<e.y; y+=sz) { let p=toScreen(0,y); ctx.moveTo(0,p.y); ctx.lineTo(canvas.width,p.y); }
+    ctx.stroke();
+    // Roads
+    ctx.lineCap = 'round';
+    state.roads.forEach(r => {
+        const p1 = toScreen(r.p1.x, r.p1.y), p2 = toScreen(r.p2.x, r.p2.y);
+        ctx.strokeStyle = CONFIG.colors.roadUnplowed; ctx.lineWidth = Math.max(2, 6*state.camera.zoom);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        if(r.plowedFwd || r.plowedBwd) {
+            ctx.strokeStyle = CONFIG.colors.roadPlowed; ctx.lineWidth *= 0.6; ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
+            if(r.plowedFwd ^ r.plowedBwd) ctx.setLineDash([10*state.camera.zoom, 10*state.camera.zoom]);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); ctx.setLineDash([]); ctx.shadowBlur = 0;
+        }
+    });
+    // Hangar & Vehicle
+    const h = toScreen(state.hangar.x, state.hangar.y);
+    ctx.fillStyle = CONFIG.colors.hangar; ctx.beginPath(); ctx.arc(h.x, h.y, 8*state.camera.zoom, 0, 6.28); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '12px monospace'; ctx.fillText("HANGAR", h.x+12, h.y+4);
+    if(state.currentAnimPos) {
+        const v = toScreen(state.currentAnimPos.x, state.currentAnimPos.y);
+        ctx.fillStyle = CONFIG.colors.vehicle; ctx.shadowBlur=20; ctx.shadowColor=CONFIG.colors.vehicle;
+        ctx.beginPath(); ctx.arc(v.x, v.y, 6*state.camera.zoom, 0, 6.28); ctx.fill(); ctx.shadowBlur=0;
+    }
+    // Snow
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    state.snow.forEach(p => { p.y+=p.v; if(p.y>canvas.height)p.y=0; ctx.beginPath(); ctx.arc(p.x, p.y, 1, 0, 6.28); ctx.fill(); });
+    requestAnimationFrame(draw);
+}
+
+// --- ALGORITHM: DIJKSTRA + LOOKAHEAD HEURISTIC ---
+
+// Helper: 計算 Dijkstra 到所有點的最短路徑
+function computeDijkstraMaps(currentPos, simRoads) {
+    let points = [{x: currentPos.x, y: currentPos.y, id: -1}];
+    simRoads.forEach((r, idx) => {
+        points.push({x: r.p1.x, y: r.p1.y, roadIdx: idx, isP1: true});
+        points.push({x: r.p2.x, y: r.p2.y, roadIdx: idx, isP1: false});
+    });
+    
+    let n = points.length;
+    let minDist = new Array(n).fill(Infinity);
+    let parent = new Array(n).fill(null);
+    let visited = new Array(n).fill(false);
+    minDist[0] = 0;
+
+    for (let i = 0; i < n; i++) {
+        let u = -1;
+        for (let j = 0; j < n; j++) { if (!visited[j] && (u === -1 || minDist[j] < minDist[u])) u = j; }
+        if (minDist[u] === Infinity) break;
+        visited[u] = true;
+
+        for (let v = 0; v < n; v++) {
+            if (u === v) continue;
+            let d = dist(points[u], points[v]);
+            let weight = d / CONFIG.speeds.travel; // 預設為 Travel Cost
+            
+            // 檢查是否為同一條路 (Opportunity)
+            if (points[u].roadIdx !== undefined && points[u].roadIdx === points[v].roadIdx) {
+                let r = simRoads[points[u].roadIdx];
+                let isFwd = points[u].isP1 && !points[v].isP1;
+                // 如果是順向且未鏟，成本為 0 (甚至可以設負值來鼓勵，但 Dijkstra 不支援負值，設 0 即可)
+                if ((isFwd && !r.plowedFwd) || (!isFwd && !r.plowedBwd)) weight = 0; 
+            }
+            if (minDist[u] + weight < minDist[v]) { minDist[v] = minDist[u] + weight; parent[v] = u; }
+        }
+    }
+    return { minDist, parent, points };
+}
+
+function planMission() {
+    state.roads.forEach(r => { r.plowedFwd = false; r.plowedBwd = false; });
+    state.animQueue = [];
+    state.stats = { dist: 0, time: 0, completedTasks: 0, totalTasks: state.roads.length * 2 };
+    
+    let currentPos = { ...state.hangar };
+    let tasksDone = 0;
+    let simRoads = JSON.parse(JSON.stringify(state.roads));
+    
+    log("Computing Optimally Split Trajectory...", "info");
+
+    while (tasksDone < state.stats.totalTasks) {
+        // 1. 計算當前位置到地圖上所有點的最短成本
+        const { minDist, parent, points } = computeDijkstraMaps(currentPos, simRoads);
+
+        // 2. 評估所有候選任務 (Candidate Tasks)
+        // 候選者是所有未鏟的方向。我們不僅看「去起點多遠」，還要看「做完後離別人多遠」
+        let bestCandidateIdx = -1;
+        let minScore = Infinity;
+
+        // 收集所有剩餘任務
+        let candidates = [];
+        for(let i=1; i<points.length; i++) {
+            let p = points[i];
+            let r = simRoads[p.roadIdx];
+            // 判斷是否為合法的任務起點
+            if ((p.isP1 && !r.plowedFwd) || (!p.isP1 && !r.plowedBwd)) {
+                candidates.push({ nodeIdx: i, point: p, road: r });
+            }
+        }
+
+        if (candidates.length === 0) break; // 全部完成
+
+        // 為每個候選任務打分數
+        candidates.forEach(cand => {
+            let costToStart = minDist[cand.nodeIdx]; // Dijkstra 算出的到達成本
+            
+            // 計算這個任務結束後的位置
+            let endPoint = cand.point.isP1 ? {x: cand.road.p2.x, y: cand.road.p2.y} : {x: cand.road.p1.x, y: cand.road.p1.y};
+            
+            // Lookahead: 做完這個任務後，離「下一個最近的未做任務」有多遠？
+            let distToNext = Infinity;
+            candidates.forEach(other => {
+                if (other === cand) return; // 不跟自己比
+                let d = dist(endPoint, other.point);
+                if (d < distToNext) distToNext = d;
+            });
+            if (candidates.length === 1) distToNext = 0; // 只剩一個時無所謂
+
+            // === 核心魔法公式 ===
+            // Score = 到達成本 + (未來最近鄰居距離 / 速度)
+            // 這會懲罰那些「做完後會卡在死胡同」的任務
+            let score = costToStart + (distToNext / CONFIG.speeds.travel);
+            
+            if (score < minScore) {
+                minScore = score;
+                bestCandidateIdx = cand.nodeIdx;
+            }
+        });
+
+        // 3. 建立路徑並執行
+        // 回溯 parent 陣列建立到最佳候選起點的路徑
+        let pathStack = [];
+        let curr = bestCandidateIdx;
+        while (curr !== 0 && parent[curr] !== null) {
+            pathStack.push({ from: points[parent[curr]], to: points[curr] });
+            curr = parent[curr];
+        }
+        let path = pathStack.reverse();
+
+        // 將路徑加入動畫佇列
+        path.forEach(step => {
+            let roadIdx = step.to.roadIdx;
+            let isPlowMove = false;
+            let dir = '';
+            
+            // 檢查這一步是否為「順路鏟雪」
+            if (step.from.roadIdx === roadIdx && roadIdx !== undefined) {
+                let r = simRoads[roadIdx];
+                if (step.from.isP1 && !step.to.isP1 && !r.plowedFwd) { isPlowMove=true; dir='fwd'; }
+                else if (!step.from.isP1 && step.to.isP1 && !r.plowedBwd) { isPlowMove=true; dir='bwd'; }
+            }
+
+            let d = dist(step.from, step.to);
+            if (isPlowMove) {
+                state.animQueue.push({ type: 'PLOW', from: step.from, to: step.to, dist: d, roadIdx, dir });
+                if(dir==='fwd') simRoads[roadIdx].plowedFwd=true; else simRoads[roadIdx].plowedBwd=true;
+                tasksDone++;
+            } else if (d > 0.001) {
+                state.animQueue.push({ type: 'TRAVEL', from: step.from, to: step.to, dist: d });
+            }
+        });
+
+        // 4. 執行目標任務本身
+        // 我們到達了 bestCandidateIdx，這是一個任務的起點，現在必須執行它
+        let targetPoint = points[bestCandidateIdx];
+        let targetRoad = simRoads[targetPoint.roadIdx];
+        let plowDir = targetPoint.isP1 ? 'fwd' : 'bwd';
+        let plowEnd = targetPoint.isP1 ? targetRoad.p2 : targetRoad.p1;
+        
+        // 檢查是否已經在上面的路徑中「順便」做掉了 (Dijkstra 有時會包含最後一步)
+        // 如果還沒做，才做
+        let alreadyDone = (plowDir==='fwd' && targetRoad.plowedFwd) || (plowDir==='bwd' && targetRoad.plowedBwd);
+        
+        if (!alreadyDone) {
+            let d = dist(targetPoint, plowEnd);
+            state.animQueue.push({ type: 'PLOW', from: targetPoint, to: plowEnd, dist: d, roadIdx: targetPoint.roadIdx, dir: plowDir });
+            if(plowDir==='fwd') simRoads[targetPoint.roadIdx].plowedFwd=true; else simRoads[targetPoint.roadIdx].plowedBwd=true;
+            tasksDone++;
+            currentPos = { x: plowEnd.x, y: plowEnd.y };
+        } else {
+            currentPos = { x: targetPoint.x, y: targetPoint.y };
+        }
+    }
+    log(`Optimization Complete. Steps: ${state.animQueue.length}`, "info");
+    startAnimation();
+}
+
+// Animation
+function log(msg, type='info') {
+    const l = document.getElementById('logger'); const d = document.createElement('div'); d.className='log-entry';
+    const t = new Date().toTimeString().split(' ')[0];
+    const c = type==='TRAVEL'?'log-type-travel':(type==='PLOW'?'log-type-plow':'');
+    d.innerHTML = `<span class="log-time">${t}</span><span class="log-msg ${c}">${msg}</span>`; l.prepend(d);
+}
+function startAnimation() {
+    if(state.animQueue.length===0) return;
+    state.isAnimating=true; state.currentAnimPos=state.hangar;
+    const ind = document.getElementById('status-indicator'); ind.innerText="MISSION ACTIVE"; ind.style.animation="pulse 1s infinite"; ind.style.color="#fff";
+    runStep();
+}
+function runStep() {
+    if(state.animQueue.length===0) {
+        state.isAnimating=false; const ind = document.getElementById('status-indicator');
+        ind.innerText="MISSION COMPLETE"; ind.style.animation="none"; ind.style.color="#4ade80"; log("All vectors cleared.", "info"); return;
+    }
+    const act = state.animQueue.shift();
+    const speedMult = parseInt(document.getElementById('simSpeed').value);
+    
+    if(act.type==='TRAVEL') {
+        log(`Deadheading: ${act.dist.toFixed(1)}m`, 'TRAVEL'); document.getElementById('status-indicator').innerText="DEADHEADING"; document.getElementById('status-indicator').style.color=CONFIG.colors.travelPath;
+    } else {
+        log(`Plowing Sec-${act.roadIdx+1}: ${act.dist.toFixed(1)}m`, 'PLOW'); document.getElementById('status-indicator').innerText="PLOWING"; document.getElementById('status-indicator').style.color=CONFIG.colors.plowPath;
+    }
+    const duration = Math.max((act.dist/speedMult)*1000, 100); const startT = performance.now();
+    const sx=act.from.x, sy=act.from.y, ex=act.to.x, ey=act.to.y;
+    function loop(now) {
+        const p = Math.min((now-startT)/duration, 1);
+        state.currentAnimPos = { x: sx+(ex-sx)*p, y: sy+(ey-sy)*p };
+        if(p<1) requestAnimationFrame(loop);
+        else {
+            state.stats.dist += act.dist; state.stats.time += act.dist / (act.type==='TRAVEL'?CONFIG.speeds.travel:CONFIG.speeds.plow);
+            if(act.type==='PLOW') { state.stats.completedTasks++; if(act.dir==='fwd') state.roads[act.roadIdx].plowedFwd=true; else state.roads[act.roadIdx].plowedBwd=true; }
+            updateHUD(); runStep();
+        }
+    }
+    requestAnimationFrame(loop);
+}
+function updateHUD() {
+    document.getElementById('disp-dist').innerText = (state.stats.dist/1000).toFixed(2)+" km";
+    const h=Math.floor(state.stats.time), m=Math.round((state.stats.time-h)*60);
+    document.getElementById('disp-time').innerText = `${h}:${m<10?'0'+m:m}`;
+    document.getElementById('disp-prog').innerText = Math.round(state.stats.completedTasks/state.stats.totalTasks*100)+"%";
+}
+
+// DOM
+document.getElementById('btnAdd').addEventListener('click', () => {
+    const vals = ['x1','y1','x2','y2'].map(id=>document.getElementById(id).value);
+    if(vals.some(v=>v==='')) return;
+    const [x1,y1,x2,y2] = vals.map(parseFloat);
+    state.roads.push({p1:{x:x1,y:y1}, p2:{x:x2,y:y2}, plowedFwd:false, plowedBwd:false});
+    ['x1','y1','x2','y2'].forEach(id=>document.getElementById(id).value='');
+    updateList(); autoFocus();
+});
+document.getElementById('btnRun').addEventListener('click', () => {
+    if(state.isAnimating) return;
+    state.hangar = { x: parseFloat(document.getElementById('hx').value)||0, y: parseFloat(document.getElementById('hy').value)||0 };
+    if(document.getElementById('x1').value !== '') document.getElementById('btnAdd').click();
+    if(state.roads.length===0) { alert("Please add a road vector first."); return; }
+    planMission();
+});
+document.getElementById('btnReset').addEventListener('click', () => location.reload());
+function updateList() {
+    const l = document.getElementById('road-list'); l.innerHTML='';
+    state.roads.forEach((r,i) => {
+        const d = document.createElement('div'); d.className='road-item';
+        d.innerHTML=`<span>SEC-${i+1}</span><span>[${r.p1.x},${r.p1.y}]→[${r.p2.x},${r.p2.y}]</span>`; l.appendChild(d);
+    });
+}
+
+resize(); initSnow(); draw();
+log("Command System Online.", "info");
+</script>
+</body>
+</html>
