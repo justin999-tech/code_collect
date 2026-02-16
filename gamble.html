@@ -466,7 +466,7 @@
             transform: scale(0.98);
         }
 
-        /* Chips */
+        /* Chips - Base style (default for betting chips) */
         .chip {
             position: absolute;
             width: 40px;
@@ -483,6 +483,86 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.5);
             pointer-events: none;
             z-index: 100;
+        }
+
+        /* $10 Chip - Smallest */
+        .chip-10 {
+            width: 40px;
+            height: 40px;
+        }
+
+        /* $50 Chip - Medium, same gold color but bigger */
+        .chip-50 {
+            width: 48px;
+            height: 48px;
+        }
+
+        /* $100 Chip - Largest, same gold color but biggest */
+        .chip-100 {
+            width: 56px;
+            height: 56px;
+        }
+
+        /* Dice Statistics */
+        .dice-stats {
+            position: absolute;
+            top: 3.5%;
+            display: flex;
+            gap: 10px;
+            background: rgba(139, 69, 19, 0.75);
+            padding: 12px 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 2px solid rgba(139, 69, 19, 0.9);
+            z-index: 45;
+        }
+
+        .dice-stats.left {
+            left: 25%;
+            transform: none;
+        }
+
+        .dice-stats.right {
+            right: 25%;
+            transform: none;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            position: relative;
+            padding: 5px 8px;
+            border-radius: 8px;
+            background: rgba(101, 67, 33, 0.6);
+            min-width: 45px;
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .stat-count {
+            font-size: 16px;
+            color: #f5e6d3;
+            font-weight: 600;
+        }
+
+        .crown-icon {
+            position: absolute;
+            top: -8px;
+            right: -5px;
+            font-size: 18px;
+            animation: crownBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes crownBounce {
+            0%, 100% { transform: translateY(0) rotate(-15deg); }
+            50% { transform: translateY(-3px) rotate(-15deg); }
         }
 
         /* Dice area */
@@ -507,20 +587,7 @@
             transition: transform 0.1s;
         }
 
-        /* 3D dice wrapper for shadow */
-        .dice-container::after {
-            content: '';
-            position: absolute;
-            width: 120%;
-            height: 120%;
-            top: -10%;
-            left: -10%;
-            filter: blur(20px);
-            opacity: 0.3;
-            background: radial-gradient(circle, rgba(0,0,0,0.5) 0%, transparent 70%);
-            z-index: -1;
-            transform: translateZ(-60px);
-        }
+        /* 3D dice wrapper for shadow - removed per user request */
 
         .dice-container.rolling {
             animation: diceRoll 2s ease-out;
@@ -537,44 +604,38 @@
 
         .dice-face {
             position: absolute;
-            width: 102px;
-            height: 102px;
-            background:
-                linear-gradient(145deg, #ffffff, #fafafa, #f5f5f5),
-                #ffffff;  /* 實心白色背景，避免透明 */
-            border: 2px solid #555;
-            border-radius: 16px;  /* 調整圓角大小，避免縫隙 */
+            width: 100px;  /* 必須與容器完全相同 */
+            height: 100px;
+            background: #ffffff;  /* 純白色背景，完全不透明 */
+            border: 2px solid #333;
+            border-radius: 12px;  /* 適度圓角 */
             display: grid;
             grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-            gap: 8px;
+            gap: 6px;
             padding: 15px;
-            box-shadow:
-                inset 2px 2px 8px rgba(255,255,255,0.9),
-                inset -2px -2px 8px rgba(0,0,0,0.15),
-                0 8px 20px rgba(0,0,0,0.25);
+            box-sizing: border-box;
+            align-items: center;  /* 垂直居中 */
+            justify-items: center;  /* 水平居中 */
             backface-visibility: hidden;
             transform-style: preserve-3d;
-            overflow: hidden;  /* 確保內容不會超出邊界 */
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.7);  /* 細微內陰影增加立體感 */
         }
 
-        /* Position each face in 3D space - slightly larger to avoid gaps */
-        .dice-face.face-1 { transform: rotateY(0deg) translateZ(51px); }
-        .dice-face.face-2 { transform: rotateY(90deg) translateZ(51px); }
-        .dice-face.face-3 { transform: rotateX(90deg) translateZ(51px); }
-        .dice-face.face-4 { transform: rotateX(-90deg) translateZ(51px); }
-        .dice-face.face-5 { transform: rotateY(-90deg) translateZ(51px); }
-        .dice-face.face-6 { transform: rotateY(180deg) translateZ(51px); }
+        /* Position each face in 3D space - translateZ must be exactly half of container size (50px) */
+        .dice-face.face-1 { transform: rotateY(0deg) translateZ(50px); }
+        .dice-face.face-2 { transform: rotateY(90deg) translateZ(50px); }
+        .dice-face.face-3 { transform: rotateX(90deg) translateZ(50px); }
+        .dice-face.face-4 { transform: rotateX(-90deg) translateZ(50px); }
+        .dice-face.face-5 { transform: rotateY(-90deg) translateZ(50px); }
+        .dice-face.face-6 { transform: rotateY(180deg) translateZ(50px); }
 
         /* Dice dots */
         .dot {
-            width: 16px;
-            height: 16px;
-            background: radial-gradient(circle at 35% 35%, #444, #222, #111);
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle at 35% 35%, #2a2a2a, #1a1a1a, #000);
             border-radius: 50%;
-            box-shadow:
-                inset -1px -1px 2px rgba(255,255,255,0.2),
-                inset 2px 2px 4px rgba(0,0,0,0.5),
-                0 2px 4px rgba(0,0,0,0.3);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.3);  /* 細微陰影增加深度 */
         }
 
         .dot { grid-area: auto; }
@@ -622,13 +683,10 @@
             position: absolute;
             width: 150px;
             height: 150px;
-            background: radial-gradient(circle at 40% 40%, #f4c49c, #d4a574);
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
             opacity: 0;
             pointer-events: none;
             z-index: 200;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            filter: sepia(0.4) saturate(1.5) brightness(1.1);
         }
 
         .dealer-hand::after {
@@ -636,8 +694,8 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) rotate(45deg);
-            font-size: 72px;
+            transform: translate(-50%, -50%);
+            font-size: 90px;
         }
 
         /* Game messages */
@@ -804,6 +862,38 @@
                         <span class="big-small-label chinese-label">大</span>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Dice Statistics - Left (1-3) -->
+        <div class="dice-stats left" id="stats-left">
+            <div class="stat-item" data-number="1">
+                <span class="stat-number">1</span>
+                <span class="stat-count" id="count-1">0</span>
+            </div>
+            <div class="stat-item" data-number="2">
+                <span class="stat-number">2</span>
+                <span class="stat-count" id="count-2">0</span>
+            </div>
+            <div class="stat-item" data-number="3">
+                <span class="stat-number">3</span>
+                <span class="stat-count" id="count-3">0</span>
+            </div>
+        </div>
+
+        <!-- Dice Statistics - Right (4-6) -->
+        <div class="dice-stats right" id="stats-right">
+            <div class="stat-item" data-number="4">
+                <span class="stat-number">4</span>
+                <span class="stat-count" id="count-4">0</span>
+            </div>
+            <div class="stat-item" data-number="5">
+                <span class="stat-number">5</span>
+                <span class="stat-count" id="count-5">0</span>
+            </div>
+            <div class="stat-item" data-number="6">
+                <span class="stat-number">6</span>
+                <span class="stat-count" id="count-6">0</span>
             </div>
         </div>
 
@@ -1027,6 +1117,7 @@
             betHistory: [],
             isRolling: false,
             diceResult: 1,
+            diceStats: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
 
             init() {
                 SoundEffects.init();
@@ -1042,6 +1133,33 @@
                 });
 
                 this.updateUI();
+                this.updateDiceStats();
+            },
+
+            updateDiceStats() {
+                // Update counts display
+                for (let i = 1; i <= 6; i++) {
+                    document.getElementById(`count-${i}`).textContent = this.diceStats[i];
+                }
+
+                // Find the maximum count
+                const maxCount = Math.max(...Object.values(this.diceStats));
+
+                // Remove all existing crowns
+                document.querySelectorAll('.crown-icon').forEach(el => el.remove());
+
+                // Add crowns to numbers with max count (only if maxCount > 0)
+                if (maxCount > 0) {
+                    for (let i = 1; i <= 6; i++) {
+                        if (this.diceStats[i] === maxCount) {
+                            const statItem = document.querySelector(`.stat-item[data-number="${i}"]`);
+                            const crown = document.createElement('span');
+                            crown.className = 'crown-icon';
+                            crown.textContent = '👑';
+                            statItem.appendChild(crown);
+                        }
+                    }
+                }
             },
 
             setupEventListeners() {
@@ -1184,6 +1302,7 @@
                 this.bets = {};
                 this.betHistory = [];
                 this.diceResult = 1;
+                this.diceStats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
 
                 // Clear UI
                 document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
@@ -1202,6 +1321,7 @@
                 // Update UI
                 document.getElementById('current-bet').textContent = '0';
                 this.updateUI();
+                this.updateDiceStats();
 
                 this.showMessage('Game Reset! 🔄', 'info');
             },
@@ -1431,47 +1551,87 @@
 
                 await timeline.then();
                 await new Promise(resolve => setTimeout(resolve, 200));
+
+                // Update statistics after animation completes
+                this.diceStats[this.diceResult]++;
+                this.updateDiceStats();
             },
 
             async sweepLosingBets(losingBets) {
                 if (losingBets.length === 0) return;
 
                 const dealerHand = document.querySelector('.dealer-hand');
+                const gameContainer = document.querySelector('.game-container');
+                const containerRect = gameContainer.getBoundingClientRect();
+                const screenWidth = window.innerWidth;
 
                 for (const bet of losingBets) {
                     const rect = bet.element.getBoundingClientRect();
 
-                    // Position dealer hand
+                    // Position dealer hand at the center of the betting grid
+                    // Convert from viewport coordinates to container-relative coordinates
                     gsap.set(dealerHand, {
-                        left: rect.left - 75,
-                        top: rect.top - 75,
+                        left: rect.left - containerRect.left + rect.width / 2 - 75,  // Center hand emoji on the betting grid
+                        top: rect.top - containerRect.top + rect.height / 2 - 75,   // Center vertically on the bet
                         opacity: 1
                     });
 
-                    // Sweep across the betting area
+                    // Sweep across the betting area and continue to the right edge
                     await gsap.to(dealerHand, {
-                        duration: 0.5,
-                        left: rect.right + 50,
-                        ease: 'power2.inOut'
+                        duration: 0.4,  // Faster sweep
+                        left: containerRect.width + 150,  // Sweep completely off the container to the right
+                        ease: 'power2.in'  // Accelerating motion
                     });
 
                     // Hide bet indicator
                     const indicator = bet.element.querySelector('.bet-indicator');
                     if (indicator) {
                         gsap.to(indicator, {
-                            duration: 0.3,
+                            duration: 0.2,  // Faster fade
                             opacity: 0,
                             scale: 0,
                             onComplete: () => indicator.remove()
                         });
                     }
+
+                    // Fade out hand before moving to next bet
+                    await gsap.to(dealerHand, {
+                        duration: 0.1,  // Faster transition between bets
+                        opacity: 0
+                    });
+                }
+            },
+
+            breakDownMoney(amount) {
+                // Break down money into realistic denominations
+                const breakdown = [];
+                let remaining = amount;
+
+                // Calculate number of each denomination (largest first)
+                const hundreds = Math.floor(remaining / 100);
+                for (let i = 0; i < hundreds; i++) {
+                    breakdown.push({ value: 100, class: 'chip-100' });
+                }
+                remaining -= hundreds * 100;
+
+                const fifties = Math.floor(remaining / 50);
+                for (let i = 0; i < fifties; i++) {
+                    breakdown.push({ value: 50, class: 'chip-50' });
+                }
+                remaining -= fifties * 50;
+
+                const tens = Math.floor(remaining / 10);
+                for (let i = 0; i < tens; i++) {
+                    breakdown.push({ value: 10, class: 'chip-10' });
+                }
+                remaining -= tens * 10;
+
+                // If there's any remainder less than 10, add it as a single chip
+                if (remaining > 0) {
+                    breakdown.push({ value: remaining, class: 'chip-10' });
                 }
 
-                // Hide dealer hand
-                await gsap.to(dealerHand, {
-                    duration: 0.3,
-                    opacity: 0
-                });
+                return breakdown;
             },
 
             async payoutWinningBets(winningBets) {
@@ -1483,34 +1643,55 @@
                 for (const bet of winningBets) {
                     const rect = bet.element.getBoundingClientRect();
                     const totalPayout = bet.amount + bet.payout;
-                    const numChips = Math.ceil(bet.payout / 10);
+
+                    // Break down payout into realistic denominations
+                    const chipBreakdown = this.breakDownMoney(bet.payout);
 
                     // Create and animate payout chips
                     const chipPromises = [];
-                    for (let i = 0; i < numChips; i++) {
+                    for (let i = 0; i < chipBreakdown.length; i++) {
+                        const chipInfo = chipBreakdown[i];
                         const chip = document.createElement('div');
-                        chip.className = 'chip';
-                        chip.textContent = `$${Math.floor(bet.payout / numChips)}`;
+                        chip.className = `chip ${chipInfo.class}`;
+                        chip.textContent = `$${chipInfo.value}`;
 
-                        chip.style.left = `${rect.left + rect.width / 2 - 20}px`;
-                        chip.style.top = `${rect.top + rect.height / 2 - 20}px`;
+                        // Get chip size for centering
+                        const chipSize = chipInfo.class === 'chip-100' ? 56 :
+                                       chipInfo.class === 'chip-50' ? 48 : 40;
+
+                        chip.style.left = `${rect.left + rect.width / 2 - chipSize / 2}px`;
+                        chip.style.top = `${rect.top + rect.height / 2 - chipSize / 2}px`;
 
                         document.body.appendChild(chip);
 
-                        const promise = gsap.to(chip, {
-                            duration: 0.8,
-                            left: playerRect.left + playerRect.width / 2 - 20 + (Math.random() - 0.5) * 40,
-                            top: playerRect.top + (Math.random() - 0.5) * 30,
-                            delay: i * 0.05,
-                            ease: 'power2.inOut',
-                            onStart: () => {
-                                // Play coin sound when chip starts flying back
-                                SoundEffects.playCoinDrop();
-                            },
-                            onComplete: () => {
-                                chip.remove();
-                            }
-                        });
+                        // Create animation timeline for each chip
+                        const promise = gsap.timeline()
+                            // Fly to player area
+                            .to(chip, {
+                                duration: 0.8,
+                                left: playerRect.left + playerRect.width / 2 - chipSize / 2 + (Math.random() - 0.5) * 40,
+                                top: playerRect.top + (Math.random() - 0.5) * 30,
+                                delay: i * 0.08,
+                                ease: 'power2.inOut',
+                                onStart: () => {
+                                    // Play coin sound when chip starts flying back
+                                    SoundEffects.playCoinDrop();
+                                }
+                            })
+                            // Stay in player area for a while
+                            .to(chip, {
+                                duration: 0.1,  // Stay for 1.5 seconds
+                            })
+                            // Fade out gradually
+                            .to(chip, {
+                                duration: 0.2,
+                                opacity: 0,
+                                scale: 0.8,
+                                ease: 'power2.in',
+                                onComplete: () => {
+                                    chip.remove();
+                                }
+                            });
 
                         chipPromises.push(promise);
                     }
